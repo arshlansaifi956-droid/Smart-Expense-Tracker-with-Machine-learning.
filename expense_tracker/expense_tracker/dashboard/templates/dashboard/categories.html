@@ -1,0 +1,67 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Expense Categories</h2>
+            <p>Breakdown of your spending by category</p>
+        </div>
+        <div class="total-summary">
+            <span>Total Spending</span>
+            <h3>₹ {{ total_all }}</h3>
+        </div>
+    </div>
+
+    <div class="category-grid">
+        {% for category in categories %}
+        <div class="card category-card">
+            <div class="category-header">
+                <div class="category-icon-wrapper">
+                    <span class="material-icons-round {{ category.category|category_icon_class }}">{{ category.icon|default:'payments' }}</span>
+                </div>
+                <div class="category-info">
+                    <h4>{{ category.category }}</h4>
+                    <p>{{ category.transaction_count }} Transactions</p>
+                </div>
+                <div class="category-amount">
+                    <h3>₹ {{ category.total_amount|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="category-progress">
+                <div class="progress-info">
+                    <span>{{ category.percentage }}% of total spend</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ category.percentage }}%; background-color: #5470ff;"></div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+            <p>No category data available. Start adding expenses!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .header-with-action { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+    .total-summary { text-align: right; }
+    .total-summary span { color: var(--text-muted); font-size: 0.9rem; }
+    .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .category-card { padding: 20px; }
+    .category-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .category-icon-wrapper { width: 50px; height: 50px; border-radius: 12px; background: #f0f3ff; color: #5470ff; display: flex; align-items: center; justify-content: center; }
+    .category-icon-wrapper span { font-size: 28px; }
+    .category-info { flex: 1; }
+    .category-info h4 { margin: 0; font-size: 1.1rem; }
+    .category-info p { margin: 0; color: var(--text-muted); font-size: 0.85rem; }
+    .category-amount h3 { margin: 0; font-size: 1.2rem; color: var(--text-dark); }
+    .progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); }
+    .progress-bar-container { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 4px; }
+</style>
+{% endblock %}

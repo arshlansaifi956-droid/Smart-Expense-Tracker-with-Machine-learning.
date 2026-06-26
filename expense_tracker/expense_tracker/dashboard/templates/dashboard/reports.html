@@ -1,0 +1,245 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Expense Reports</h2>
+            <p>Analyze your spending habits over time</p>
+        </div>
+        <form class="date-range-filter" method="GET">
+            <input type="date" name="start_date" value="{{ start_date }}">
+            <span>to</span>
+            <input type="date" name="end_date" value="{{ end_date }}">
+            <button type="submit" class="apply-btn">Apply Filter</button>
+        </form>
+    </div>
+
+    <!-- Export Options -->
+    <div class="export-options" style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+        <a href="{% url 'export_expenses' %}?format=csv&start_date={{ start_date }}&end_date={{ end_date }}" class="export-btn csv">
+            <span class="material-icons-round">description</span> Export CSV
+        </a>
+        <a href="{% url 'export_expenses' %}?format=pdf&start_date={{ start_date }}&end_date={{ end_date }}" class="export-btn pdf">
+            <span class="material-icons-round">picture_as_pdf</span> Export PDF
+        </a>
+        <a href="{% url 'export_expenses' %}?format=ledger&start_date={{ start_date }}&end_date={{ end_date }}" class="export-btn ledger">
+            <span class="material-icons-round">table_view</span> Export Ledger
+        </a>
+    </div>
+
+    <!-- Analytics Cards -->
+    <div class="dashboard-grid" style="margin-bottom: 30px;">
+        <div class="card summary-card">
+            <div class="card-icon blue">
+                <span class="material-icons-round">payments</span>
+            </div>
+            <div class="card-info">
+                <p>Total Spent</p>
+                <h3>₹ {{ total_spent }}</h3>
+            </div>
+        </div>
+        <div class="card summary-card">
+            <div class="card-icon green">
+                <span class="material-icons-round">calendar_today</span>
+            </div>
+            <div class="card-info">
+                <p>Daily Average</p>
+                <h3>₹ {{ avg_daily }}</h3>
+            </div>
+        </div>
+        <div class="card summary-card">
+            <div class="card-icon purple">
+                <span class="material-icons-round">history</span>
+            </div>
+            <div class="card-info">
+                <p>Transactions</p>
+                <h3>{{ transaction_count }}</h3>
+            </div>
+        </div>
+        <div class="card summary-card">
+            <div class="card-icon" style="background-color: {{ health_color }}15; color: {{ health_color }};">
+                <span class="material-icons-round">favorite</span>
+            </div>
+            <div class="card-info">
+                <p>Health Score</p>
+                <h3>{{ health_score }}%</h3>
+                <span class="trend" style="color: {{ health_color }};">
+                    {{ health_status }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="dashboard-grid" style="margin-bottom: 30px;">
+        <div class="card chart-card spending-trend-card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3>Spending Trend</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dailyTrendChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>Category Breakdown</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Charts Row 2 -->
+    <div class="dashboard-grid">
+        <div class="card chart-card dow-distribution-card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3>Day of Week Distribution</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dowChart"></canvas>
+            </div>
+        </div>
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>Weekday vs Weekend</h3>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="wvChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .header-with-action { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
+    .date-range-filter { display: flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 10px 15px; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid #eee; }
+    .date-range-filter input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
+    .apply-btn { background: #5470ff; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .apply-btn:hover { background: #435cd1; }
+    .chart-wrapper { min-height: 300px; padding: 20px; }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .export-btn .material-icons-round { font-size: 20px; }
+    
+    .export-btn.csv { background-color: #f0f7ff; color: #007bff; border: 1px solid #cce5ff; }
+    .export-btn.csv:hover { background-color: #007bff; color: #fff; }
+    
+    .export-btn.pdf { background-color: #fff0f0; color: #dc3545; border: 1px solid #f8d7da; }
+    .export-btn.pdf:hover { background-color: #dc3545; color: #fff; }
+    
+    .export-btn.ledger { background-color: #f0fff4; color: #28a745; border: 1px solid #d4edda; }
+    .export-btn.ledger:hover { background-color: #28a745; color: #fff; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (existing Daily Trend Chart)
+        const trendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ trend_labels|safe }},
+                datasets: [{
+                    label: 'Daily Spending',
+                    data: {{ trend_data|safe }},
+                    borderColor: '#5470ff',
+                    backgroundColor: 'rgba(84, 112, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#5470ff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ... (existing Category Pie Chart)
+        const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ cat_labels|safe }},
+                datasets: [{
+                    data: {{ cat_data|safe }},
+                    backgroundColor: ['#5470ff', '#4ade80', '#fbbf24', '#a78bfa', '#f87171', '#38bdf8', '#fb7185'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+
+        // NEW: Day of Week Chart
+        const dowCtx = document.getElementById('dowChart').getContext('2d');
+        new Chart(dowCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ dow_labels|safe }},
+                datasets: [{
+                    label: 'Spending by Day',
+                    data: {{ dow_data|safe }},
+                    backgroundColor: '#5470ff',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // NEW: Weekday vs Weekend Chart
+        const wvCtx = document.getElementById('wvChart').getContext('2d');
+        new Chart(wvCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ wv_labels|safe }},
+                datasets: [{
+                    data: {{ wv_data|safe }},
+                    backgroundColor: ['#4ade80', '#fbbf24'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

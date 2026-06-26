@@ -1,0 +1,40 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto; padding: 40px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+        <div class="card-icon green" style="width: 64px; height: 64px; margin: 0 auto 16px;">
+            <span class="material-icons-round" style="font-size: 32px;">account_balance</span>
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;">Set Monthly Budget</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Define your spending limit for this month to track your progress.</p>
+    </div>
+
+    {% if messages %}
+    <div style="margin-bottom: 24px;">
+        {% for message in messages %}
+        <div style="padding: 12px; border-radius: 8px; background-color: #f0fdf4; color: #22c55e; border: 1px solid #dcfce7; font-size: 0.85rem; margin-bottom: 8px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label for="amount" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Monthly Budget Amount (₹)</label>
+            <input type="number" name="amount" id="amount" step="0.01" value="{{ budget.amount }}" required 
+                style="width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1.1rem; font-weight: 600; color: var(--text-main);">
+        </div>
+        
+        <button type="submit" class="add-expense-btn" style="width: 100%; font-size: 1rem; padding: 16px;">
+            Save Budget Settings
+        </button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 24px;">
+        <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500;">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

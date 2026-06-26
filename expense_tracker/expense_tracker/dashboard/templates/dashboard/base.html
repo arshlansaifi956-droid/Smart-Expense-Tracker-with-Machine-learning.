@@ -1,0 +1,384 @@
+{% load static %}
+{% load dashboard_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar nav ul a { text-decoration: none; color: inherit; display: block; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: var(--card-bg); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close { cursor: pointer; font-size: 24px; color: #666; }
+        .mic-container { position: relative; margin: 30px auto; width: 80px; height: 80px; }
+        .mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: #5470ff; color: #fff; cursor: pointer; position: relative; z-index: 2; transition: transform 0.2s; }
+        .mic-btn:active { transform: scale(0.9); }
+        .mic-btn span { font-size: 40px; }
+        .pulse-ring { position: absolute; top: 0; left: 0; width: 80px; height: 80px; background: rgba(84, 112, 255, 0.4); border-radius: 50%; animation: pulse 1.5s infinite; display: none; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+        .transcription-box { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #e0e0e0; min-height: 60px; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #5470ff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Calendar Picker Styles */
+        .calendar-picker-day:hover:not(:empty) { background: #f1f5f9; }
+        .calendar-picker-day.active-today { background: #3b82f6 !important; color: white !important; font-weight: 700; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
+        .calendar-picker-day.is-holiday { color: #ef4444; }
+        
+        .dark-theme .calendar-picker-dropdown { background: #1e293b !important; border-color: #334155 !important; }
+        .dark-theme .calendar-picker-dropdown h4, .dark-theme .calendar-picker-dropdown span { color: #f8fafc !important; }
+        .dark-theme .calendar-picker-day:hover:not(:empty) { background: #334155; }
+        .dark-theme #festivalToast { background: #1e293b; color: white; border-color: #f87171; }
+        .dark-theme #holidayBanner { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="{% if user_prefs.dark_mode %}dark-theme{% endif %}">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="material-icons-round">account_balance_wallet</span>
+                <h2>Smart Expense Tracker</h2>
+            </div>
+            <nav>
+                <ul>
+                    <a href="{% url 'dashboard' %}">
+                        <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <span class="material-icons-round">dashboard</span>
+                            <span>Dashboard</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'expenses' %}">
+                        <li class="{% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
+                            <span class="material-icons-round">receipt_long</span>
+                            <span>Expenses</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'receipts' %}">
+                        <li class="{% if request.resolver_match.url_name == 'receipts' %}active{% endif %}">
+                            <span class="material-icons-round">receipt</span>
+                            <span>Receipts</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'categories' %}">
+                        <li class="{% if request.resolver_match.url_name == 'categories' %}active{% endif %}">
+                            <span class="material-icons-round">category</span>
+                            <span>Categories</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'budgets' %}">
+                        <li class="{% if request.resolver_match.url_name == 'budgets' %}active{% endif %}">
+                            <span class="material-icons-round">account_balance</span>
+                            <span>Budgets</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'reports' %}">
+                        <li class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+                            <span class="material-icons-round">bar_chart</span>
+                            <span>Reports</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'alerts' %}">
+                        <li class="{% if request.resolver_match.url_name == 'alerts' %}active{% endif %}">
+                            <span class="material-icons-round">notifications</span>
+                            <span>Alerts</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'groups' %}">
+                        <li class="{% if request.resolver_match.url_name == 'groups' %}active{% endif %}">
+                            <span class="material-icons-round">groups</span>
+                            <span>Family / Groups</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'search' %}">
+                        <li class="{% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+                            <span class="material-icons-round">search</span>
+                            <span>Search</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'calendar' %}">
+                        <li class="{% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+                            <span class="material-icons-round">calendar_month</span>
+                            <span>Calendar</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'settings' %}">
+                        <li class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                            <span class="material-icons-round">settings</span>
+                            <span>Settings</span>
+                        </li>
+                    </a>
+                    <a href="{% url 'logout' %}">
+                        <li>
+                            <span class="material-icons-round">logout</span>
+                            <span>Logout</span>
+                        </li>
+                    </a>
+                </ul>
+            </nav>
+            {% if user_prefs.voice_assistant_enabled %}
+            <button class="add-expense-btn" onclick="openVoiceModal()">
+                <span class="material-icons-round">mic</span>
+                Voice Assistant
+            </button>
+            {% endif %}
+            <div class="user-profile-sidebar">
+                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D8ABC&color=fff" alt="User">
+                <div class="user-info">
+                    <span class="name">{{ user.username }}</span>
+                    
+                </div>
+                <span class="material-icons-round">chevron_right</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div class="welcome">
+                    <div class="menu-toggle">
+                        <span class="material-icons-round">menu</span>
+                    </div>
+                    <div>
+                        <h1>Welcome back, {{ user.username }}! 👋</h1>
+                        <p>Here's what's happening with your expenses.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="notification-bell" onclick="window.location.href='{% url 'alerts' %}'" style="position: relative; cursor: pointer;">
+                        <span class="material-icons-round">notifications</span>
+                        {% if unread_alerts_count > 0 %}
+                        <span class="badge" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid white;">{{ unread_alerts_count }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="user-avatar" onclick="window.location.href='{% url 'logout' %}'" title="Logout">
+                        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D8ABC&color=fff" alt="User">
+                        <span>{{ user.username }}</span>
+                        <span class="material-icons-round">logout</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="date-selector-container" style="position: relative;">
+                <div class="date-selector" onclick="toggleHolidayDropdown(event)">
+                    <span class="material-icons-round">calendar_today</span>
+                    <span id="navDateDisplay">{{ today_date }}</span>
+                    <span class="material-icons-round">expand_more</span>
+                </div>
+                
+                <div id="holidayDropdown" class="calendar-picker-dropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 320px; background: white; border-radius: 16px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 1000; margin-top: 10px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h4 style="font-size: 1rem; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ current_month_name }}, {{ current_year }}
+                        </h4>
+                        <div style="display: flex; gap: 15px; color: #64748b;">
+                            <span class="material-icons-round" style="cursor: pointer; font-size: 20px;" onclick="window.location.href='{% url 'calendar' %}'">event_note</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 10px;">
+                        {% for day in "Su,Mo,Tu,We,Th,Fr,Sa"|split:"," %}
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #64748b; padding-bottom: 10px;">{{ day }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;">
+                        {% for week in calendar_grid %}
+                            {% for day_obj in week %}
+                            <div class="calendar-picker-day {% if day_obj.is_today %}active-today{% endif %} {% if day_obj.holiday %}is-holiday{% endif %}" 
+                                 style="height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 500; border-radius: 8px; cursor: pointer; position: relative; transition: 0.2s; color: {% if day_obj.is_past and not day_obj.is_today %}#cbd5e1{% else %}#1e293b{% endif %};"
+                                 {% if day_obj.holiday %}onclick="showHolidayName('{{ day_obj.holiday }}', '{{ day_obj.day }} {{ current_month_name|slice:':3' }}')"{% endif %}>
+                                {{ day_obj.day }}
+                                {% if day_obj.holiday %}
+                                <div style="position: absolute; bottom: 4px; width: 4px; height: 4px; background: #ef4444; border-radius: 50%;"></div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+
+                    <div id="holidayBanner" style="display: none; margin-top: 15px; padding: 12px; background: #fef2f2; border-radius: 10px; border: 1px solid #fecaca; animation: fadeIn 0.3s;">
+                        <p style="margin: 0; font-size: 0.75rem; color: #ef4444; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                            <span class="material-icons-round" style="font-size: 14px;">celebration</span>
+                            <span id="bannerDate"></span>: <span id="bannerText"></span>
+                        </p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
+                        <span style="color: #3b82f6; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="toggleHolidayDropdown(event)">Clear</span>
+                        <span style="color: #3b82f6; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="location.reload()">Today</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Festival Toast Notification -->
+            <div id="festivalToast" style="display: none; position: fixed; bottom: 30px; right: 30px; background: white; border-left: 5px solid #ef4444; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 20px; z-index: 9999; min-width: 320px; animation: slideIn 0.5s ease-out;">
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="background: #fff1f2; color: #ef4444; padding: 10px; border-radius: 10px;">
+                        <span class="material-icons-round">auto_awesome</span>
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 0.95rem; color: #1e293b;">Upcoming Celebration!</h4>
+                        <p id="festivalToastMsg" style="margin: 0; font-size: 0.85rem; color: #64748b;"></p>
+                    </div>
+                    <span class="material-icons-round" style="cursor: pointer; font-size: 18px; color: #94a3b8;" onclick="closeFestivalToast()">close</span>
+                </div>
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Voice Assistant Modal -->
+    <div id="voiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Voice Assistant</h3>
+                <span class="close" onclick="closeVoiceModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="voiceStatus">Click the mic to start speaking</p>
+                <div class="mic-container">
+                    <button id="startMicBtn" class="mic-btn">
+                        <span class="material-icons-round">mic</span>
+                    </button>
+                    <div class="pulse-ring"></div>
+                </div>
+                <div id="transcriptionBox" class="transcription-box" style="display: none;">
+                    <p id="transcribedText" style="font-weight: 500; margin-bottom: 10px;"></p>
+                    <div class="loader" id="parsingLoader" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleHolidayDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('holidayDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showHolidayName(name, date) {
+            const banner = document.getElementById('holidayBanner');
+            document.getElementById('bannerDate').innerText = date;
+            document.getElementById('bannerText').innerText = name;
+            banner.style.display = 'block';
+        }
+
+        function closeFestivalToast() {
+            document.getElementById('festivalToast').style.display = 'none';
+        }
+
+        function openVoiceModal() { document.getElementById('voiceModal').style.display = 'flex'; }
+        function closeVoiceModal() { document.getElementById('voiceModal').style.display = 'none'; stopListening(); }
+
+        const startMicBtn = document.getElementById('startMicBtn');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const transcriptionBox = document.getElementById('transcriptionBox');
+        const transcribedText = document.getElementById('transcribedText');
+        const pulseRing = document.querySelector('.pulse-ring');
+        const parsingLoader = document.getElementById('parsingLoader');
+
+        let recognition;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = '{{ user_prefs.voice_assistant_language }}';
+
+            recognition.onstart = () => {
+                voiceStatus.innerText = "Listening...";
+                pulseRing.style.display = 'block';
+                startMicBtn.style.background = '#ef4444';
+            };
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                transcribedText.innerText = `"${text}"`;
+                transcriptionBox.style.display = 'block';
+                sendToSmartParse(text);
+            };
+
+            recognition.onerror = (event) => {
+                voiceStatus.innerHTML = `<span style="color: #ef4444;">Error: ${event.error}</span>`;
+                stopListening();
+            };
+
+            recognition.onend = () => { stopListening(); };
+        } else {
+            voiceStatus.innerText = "Speech Recognition not supported.";
+            startMicBtn.disabled = true;
+        }
+
+        function stopListening() {
+            pulseRing.style.display = 'none';
+            startMicBtn.style.background = '#5470ff';
+        }
+
+        startMicBtn.onclick = () => { recognition.start(); };
+
+        function sendToSmartParse(text) {
+            parsingLoader.style.display = 'block';
+            fetch('/smart-parse/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new URLSearchParams({ 'text': text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                parsingLoader.style.display = 'none';
+                if (data.status === 'success') {
+                    voiceStatus.innerHTML = `<span style="color: #10b981;">✅ ${data.message}</span>`;
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    voiceStatus.innerHTML = `<span style="color: #ef4444;">❌ ${data.message}</span>`;
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const upcoming = [{% for fest in upcoming_festivals %}{ name: "{{ fest.name }}", date: "{{ fest.date }}", days: {{ fest.days_left }} },{% endfor %}];
+            if (upcoming.length > 0) {
+                const toast = document.getElementById('festivalToast');
+                const msg = document.getElementById('festivalToastMsg');
+                const first = upcoming[0];
+                msg.innerText = `${first.name} is ${first.days === 0 ? 'Today!' : 'in ' + first.days + ' days (' + first.date + ')'}.`;
+                setTimeout(() => toast.style.display = 'block', 2000);
+                setTimeout(() => closeFestivalToast(), 12000);
+            }
+        });
+
+        window.addEventListener('click', e => {
+            const dropdown = document.getElementById('holidayDropdown');
+            if (dropdown && !dropdown.contains(e.target)) dropdown.style.display = 'none';
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    <script src="{% static 'dashboard/js/main.js' %}"></script>
+</body>
+</html>

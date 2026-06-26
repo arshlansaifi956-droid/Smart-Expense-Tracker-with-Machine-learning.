@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Expense Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #7c69ef;
+            --banner-bg: #6358dc; /* Matched to illustration background */
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-light: #f1f5f9;
+            --input-focus: #e0e7ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%); /* Added soft gradient background */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-master-card {
+            width: 95%;
+            max-width: 1400px; /* Reverted to 1400px */
+            height: 900px; /* Reverted to 900px */
+            background: #ffffff;
+            border-radius: 40px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 45px 80px -20px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Left Section: Branding & Graphics */
+        .auth-left {
+            flex: 1.3;
+            background-color: var(--banner-bg);
+            padding: 40px 80px 80px 80px; /* Reduced top padding to 40px */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px; /* Reduced from 60px to move text up */
+        }
+
+        .brand-logo .material-icons-round {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 28px;
+        }
+
+        .brand-name h2 { font-size: 1.2rem; font-weight: 700; }
+        .brand-name p { font-size: 0.85rem; opacity: 0.8; }
+
+        .headline {
+            font-size: 1.8rem; /* Further decreased font size */
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            max-width: 450px;
+        }
+
+        .sub-headline {
+            font-size: 1rem; /* Slightly decreased */
+            opacity: 0.9;
+            line-height: 1.5;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+        .illustration-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Centered alignment for better 'set' look */
+            position: relative;
+        }
+
+        /* Right Section: Form */
+        .auth-right {
+            flex: 1;
+            padding: 80px 100px; /* Reverted padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 40px;
+            right: 60px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .welcome-header { margin-bottom: 40px; }
+        .welcome-header h1 { font-size: 2.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+        .welcome-header p { color: var(--text-muted); font-size: 1rem; }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; color: var(--text-main); }
+        
+        .input-box {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 0 18px;
+            transition: all 0.3s;
+        }
+
+        .input-box:focus-within {
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 0 4px var(--input-focus);
+        }
+
+        .input-box .material-icons-round { color: var(--text-muted); margin-right: 12px; }
+        .input-box input {
+            width: 100%;
+            border: none;
+            outline: none;
+            padding: 16px 0;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .remember-me { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; }
+        .remember-me input { width: 18px; height: 18px; accent-color: var(--primary-purple); cursor: pointer; }
+        
+        .forgot-link { font-size: 0.9rem; color: var(--primary-purple); text-decoration: none; font-weight: 600; }
+
+        .login-btn {
+            width: 100%;
+            background: var(--primary-purple);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(124, 105, 239, 0.3);
+        }
+
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(124, 105, 239, 0.4); }
+
+        .social-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 40px 0;
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .social-divider::before, .social-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1.5px solid #f1f5f9;
+        }
+
+        .social-divider span { padding: 0 15px; }
+
+        .social-group { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 40px; }
+        .social-btn {
+            flex: 1;
+            height: 60px;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .social-btn:hover { background: #f8fafc; border-color: #e2e8f0; }
+        .social-btn img { width: 24px; height: 24px; }
+
+        .footer-text { text-align: center; font-size: 0.95rem; color: var(--text-muted); }
+        .footer-text a { color: var(--primary-purple); text-decoration: none; font-weight: 700; }
+
+        .messages { list-style: none; margin-bottom: 20px; }
+        .messages li { padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .messages li.error { background: #fff1f2; color: #e11d48; }
+        .messages li.success { background: #f0fdf4; color: #16a34a; }
+
+        @media (max-width: 1100px) {
+            .auth-left { display: none; }
+            .auth-master-card { max-width: 500px; height: auto; }
+            .auth-right { padding: 50px 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-master-card">
+        <!-- Left Side -->
+        <div class="auth-left">
+            <div class="brand-logo">
+                <span class="material-icons-round">account_balance_wallet</span>
+                <div class="brand-name">
+                    <h2>Smart Expense Tracker</h2>
+                    <p>Track Smarter. Spend Better.</p>
+                </div>
+            </div>
+
+            <h1 class="headline">Take Control of Your Expenses. Track. Manage. Save. 💰</h1>
+            <p class="sub-headline">Smart Expense Tracker helps you monitor your spending, set budgets, and achieve your financial goals.</p>
+
+            <div class="illustration-container">
+                <img src="{% static 'dashboard/images/auth-illustration.png' %}" alt="Financial Illustration" style="width: 100%; height: auto; max-width: 800px; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.3));">
+            </div>
+        </div>
+
+        <!-- Right Section: Form -->
+        <div class="auth-right">
+            <div class="welcome-header">
+                <h1>Welcome Back! 👋</h1>
+                <p>Login to your account and continue tracking.</p>
+            </div>
+
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li class="{{ message.tags }}">
+                    <span class="material-icons-round" style="font-size: 18px;">error_outline</span>
+                    {{ message }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div class="input-box">
+                        <span class="material-icons-round">mail_outline</span>
+                        <input type="text" name="username" required placeholder="Enter your email address">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-box">
+                        <span class="material-icons-round">lock_outline</span>
+                        <input type="password" name="password" required placeholder="Enter your password">
+                        <span class="material-icons-round" style="cursor: pointer; font-size: 20px;">visibility_off</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <label class="remember-me">
+                        <input type="checkbox"> Remember me
+                    </label>
+                    <a href="#" class="forgot-link">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    Login <span class="material-icons-round">arrow_forward</span>
+                </button>
+            </form>
+
+            <div class="footer-text" style="margin-top: 40px;">
+                Don't have an account? <a href="{% url 'signup' %}">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block content %}
+<div class="calendar-container-wrapper">
+    <div class="header-with-action">
+        <div>
+            <h2>Expense Calendar</h2>
+            <p>Visualize your spending habits day by day</p>
+        </div>
+        <div class="calendar-nav calendar-nav-card">
+            <a href="?year={{ prev_year }}&month={{ prev_month }}" class="nav-btn">
+                <span class="material-icons-round">chevron_left</span>
+            </a>
+            <h3 class="current-month">{{ month_name }} {{ year }}</h3>
+            <a href="?year={{ next_year }}&month={{ next_month }}" class="nav-btn">
+                <span class="material-icons-round">chevron_right</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="calendar-grid-card expense-calendar-card">
+        <div class="calendar-days-header">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div class="calendar-body">
+            {% for week in calendar %}
+            <div class="calendar-week">
+                {% for day in week %}
+                <div class="calendar-day {% if day == 0 %}empty{% endif %} {% if day == today %}today{% endif %} {% if day in daily_expenses %}has-expenses{% endif %}"
+                     {% if day != 0 %}onclick="showDayDetails({{ day }}, '{{ month_name }}')" {% endif %}>
+                    {% if day != 0 %}
+                    <span class="day-number">{{ day }}</span>
+                    {% if day in daily_expenses %}
+                    <div class="day-total">₹{{ daily_expenses|get_item:day|get_item:'total'|floatformat:0 }}</div>
+                    <div class="expense-dots">
+                        {% for item in daily_expenses|get_item:day|get_item:'items'|slice:":3" %}
+                        <span class="dot"></span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="dayDetailsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="modalDateTitle">Expenses for ...</h3>
+                <span class="close" onclick="closeDayModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="dayExpensesList" class="day-expenses-list">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-container-wrapper { padding-bottom: 30px; }
+    .calendar-nav { display: flex; align-items: center; gap: 20px; background: var(--card-bg); padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .nav-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; color: #5470ff; text-decoration: none; transition: 0.2s; }
+    .nav-btn:hover { background: #f0f3ff; }
+    .current-month { margin: 0; min-width: 150px; text-align: center; font-size: 1.1rem; }
+
+    .calendar-grid-card { background: var(--card-bg); border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-top: 30px; }
+    .calendar-days-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 600; color: #64748b; margin-bottom: 20px; }
+    
+    .calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #f1f5f9; }
+    .calendar-day { min-height: 100px; padding: 10px; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; position: relative; }
+    .calendar-day:nth-child(7n) { border-right: none; }
+    .calendar-day:hover:not(.empty) { background: rgba(0,0,0,0.05); }
+    .calendar-day.empty { background: rgba(0,0,0,0.02); cursor: default; }
+    .calendar-day.today { background: rgba(84, 112, 255, 0.1); }
+    .calendar-day.today .day-number { color: #5470ff; font-weight: 700; background: #e0e7ff; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    
+    .day-number { font-size: 0.9rem; color: #475569; font-weight: 500; }
+    .day-total { margin-top: 15px; font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+    .expense-dots { display: flex; gap: 4px; margin-top: 8px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
+    
+    .day-expenses-list { text-align: left; }
+    .day-expense-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+    .day-expense-item:last-child { border-bottom: none; }
+    .day-exp-info h4 { margin: 0; font-size: 1rem; color: #1e293b; }
+    .day-exp-info span { font-size: 0.85rem; color: #64748b; }
+    .day-exp-amount { font-weight: 700; color: #ef4444; }
+
+    /* For Dark Mode Integration */
+    .dark-theme .calendar-week, .dark-theme .calendar-day { border-color: rgba(255,255,255,0.1); }
+    .dark-theme .day-number { color: #fff; }
+    .dark-theme .day-total { color: #f1f5f9; }
+    .dark-theme .day-exp-info h4 { color: #fff; }
+</style>
+
+<script>
+    const dailyExpensesData = {{ daily_expenses_json|safe }};
+    
+    function showDayDetails(day, month) {
+        const data = dailyExpensesData[day];
+        if (!data) return;
+        
+        const modal = document.getElementById('dayDetailsModal');
+        const title = document.getElementById('modalDateTitle');
+        const list = document.getElementById('dayExpensesList');
+        
+        title.innerText = `${day} ${month} ${ {{ year }} }`;
+        list.innerHTML = '';
+        
+        data.items.forEach(item => {
+            list.innerHTML += `
+                <div class="day-expense-item">
+                    <div class="day-exp-info">
+                        <h4>${item.name}</h4>
+                        <span>${item.category}</span>
+                    </div>
+                    <div class="day-exp-amount">₹${parseFloat(item.amount).toLocaleString()}</div>
+                </div>
+            `;
+        });
+        
+        modal.style.display = 'flex';
+    }
+    
+    function closeDayModal() {
+        document.getElementById('dayDetailsModal').style.display = 'none';
+    }
+    
+    // Close modal on click outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('dayDetailsModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

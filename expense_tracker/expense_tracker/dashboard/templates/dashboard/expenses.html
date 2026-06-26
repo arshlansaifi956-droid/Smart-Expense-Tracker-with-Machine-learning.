@@ -1,0 +1,93 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block content %}
+<div class="card add-expense-card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3>Add New Expense</h3>
+    </div>
+    <form method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Expense Name</label>
+            <input type="text" name="name" required placeholder="e.g. Starbucks" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+        </div>
+        <div class="form-group">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Category</label>
+            <select name="category" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: #fff;">
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Health">Health</option>
+                <option value="Education">Education</option>
+                <option value="Travel">Travel</option>
+                <option value="Fuel">Fuel</option>
+                <option value="Salary">Salary</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Gifts">Gifts</option>
+                <option value="Pets">Pets</option>
+                <option value="Children">Children</option>
+                <option value="Home">Home</option>
+                <option value="Rent">Rent</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Investments">Investments</option>
+                <option value="Income">Income</option>
+                <option value="Others">Others</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Amount (₹)</label>
+            <input type="number" step="0.01" name="amount" required placeholder="0.00" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+        </div>
+        <button type="submit" class="add-expense-btn" style="margin: 0; height: 42px;">
+            <span class="material-icons-round">add</span>
+            Add Expense
+        </button>
+    </form>
+</div>
+
+<div class="card all-expenses-card">
+    <div class="card-header">
+        <h3>All Expenses</h3>
+    </div>
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="padding: 10px; border-radius: 8px; background-color: {% if message.tags == 'success' %}#f0fdf4; color: #22c55e;{% else %}#fef2f2; color: #ef4444;{% endif %} font-size: 0.85rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="expense-list">
+        {% for expense in expenses %}
+        <div class="expense-item">
+            <div class="item-icon">
+                <span class="material-icons-round {{ expense.category|category_icon_class }}">{% if expense.icon %}{{ expense.icon }}{% else %}receipt{% endif %}</span>
+            </div>            <div class="item-details">
+                <h4>{{ expense.name }}</h4>
+                <p>{{ expense.category }} • {{ expense.date|date:"d M Y, h:i A" }}</p>
+            </div>
+            <div class="item-amount">
+                <h4>₹ {{ expense.amount }}</h4>
+            </div>
+            <form method="POST" action="{% url 'delete_expense' expense.id %}" onsubmit="return confirm('Delete this expense?');">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; color: #cbd5e1; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'">
+                    <span class="material-icons-round">delete</span>
+                </button>
+            </form>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <p>No expenses found. Add your first expense above!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

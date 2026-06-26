@@ -1,0 +1,78 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Search Expenses</h2>
+            <p>Find specific transactions by name, category, or amount</p>
+        </div>
+        <form class="search-form" method="GET" style="display: flex; gap: 10px; flex: 1; max-width: 500px;">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search name, category, or amount..." required style="flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; font-size: 1rem; box-shadow: var(--card-shadow);">
+            <button type="submit" class="apply-btn" style="padding: 10px 25px;">
+                <span class="material-icons-round" style="vertical-align: middle;">search</span>
+            </button>
+        </form>
+    </div>
+
+    {% if query %}
+    <div class="search-results-info" style="margin-bottom: 20px;">
+        <p>Showing {{ results|length }} results for "<strong>{{ query }}</strong>"</p>
+    </div>
+
+    <div class="card recent-expenses-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                        <th style="padding: 15px 20px; text-align: left; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Transaction</th>
+                        <th style="padding: 15px 20px; text-align: left; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Category</th>
+                        <th style="padding: 15px 20px; text-align: left; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Date</th>
+                        <th style="padding: 15px 20px; text-align: right; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in results %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 15px 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="icon-circle" style="width: 35px; height: 35px; background: #f0f3ff; color: #5470ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <span class="material-icons-round" style="font-size: 20px;">{{ exp.icon }}</span>
+                                </div>
+                                <span style="font-weight: 500;">{{ exp.name }}</span>
+                            </div>
+                        </td>
+                        <td style="padding: 15px 20px;"><span class="category-tag" style="padding: 5px 12px; background: #f3f4f6; border-radius: 20px; font-size: 0.8rem; color: #4b5563;">{{ exp.category }}</span></td>
+                        <td style="padding: 15px 20px; color: var(--text-muted); font-size: 0.9rem;">{{ exp.date|date:"d M Y" }}</td>
+                        <td style="padding: 15px 20px; text-align: right; font-weight: 600; color: #ef4444;">₹ {{ exp.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="padding: 50px; text-align: center;">
+                            <p style="color: var(--text-muted);">No expenses found matching your query.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 80px 50px;">
+        <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+            <span class="material-icons-round" style="font-size: 40px;">manage_search</span>
+        </div>
+        <h3>Search your spending</h3>
+        <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto;">Type a merchant name, category, or even a specific amount to filter your transactions instantly.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .header-with-action { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 40px; flex-wrap: wrap; }
+    .apply-btn { background: #5470ff; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 500; font-family: inherit;}
+    .apply-btn:hover { background: #435cd1; }
+    .table-responsive { overflow-x: auto; }
+</style>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Notifications & Alerts</h2>
+            <p>Stay updated on your budget and group activities</p>
+        </div>
+        {% if alerts %}
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="apply-btn">
+                <span class="material-icons-round" style="vertical-align: middle; margin-right: 5px;">done_all</span>
+                Mark All as Read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="alerts-list" style="margin-top: 20px;">
+        {% for alert in alerts %}
+        <div class="card alert-card {% if not alert.is_read %}unread{% endif %}" style="margin-bottom: 15px; border-left: 5px solid {% if alert.type == 'budget_exceeded' %}#ef4444{% elif alert.type == 'budget_warning' %}#fbbf24{% else %}#5470ff{% endif %}; position: relative; padding: 20px;">
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <div class="alert-icon" style="color: {% if alert.type == 'budget_exceeded' %}#ef4444{% elif alert.type == 'budget_warning' %}#fbbf24{% else %}#5470ff{% endif %};">
+                    <span class="material-icons-round">
+                        {% if alert.type == 'budget_exceeded' %}error{% elif alert.type == 'budget_warning' %}warning{% else %}info{% endif %}
+                    </span>
+                </div>
+                <div class="alert-content">
+                    <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">{{ alert.title }}</h4>
+                    <p style="margin: 0; color: var(--text-muted); line-height: 1.5;">{{ alert.message }}</p>
+                    <span style="font-size: 0.8rem; color: #999; margin-top: 10px; display: block;">{{ alert.created_at|date:"d M Y, h:i A" }}</span>
+                </div>
+            </div>
+            {% if not alert.is_read %}
+            <div class="unread-dot" style="position: absolute; top: 20px; right: 20px; width: 10px; height: 10px; background: #5470ff; border-radius: 50%;"></div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="card" style="text-align: center; padding: 50px;">
+            <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <span class="material-icons-round" style="font-size: 32px;">notifications_off</span>
+            </div>
+            <h3>No Alerts</h3>
+            <p style="color: var(--text-muted);">You're all caught up! No new notifications.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .header-with-action { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
+    .apply-btn { background: #5470ff; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; font-family: inherit;}
+    .apply-btn:hover { background: #435cd1; }
+    .alert-card.unread { background: #f0f3ff; }
+</style>
+{% endblock %}

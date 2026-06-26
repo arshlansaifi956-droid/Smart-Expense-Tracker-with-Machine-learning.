@@ -1,0 +1,195 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Family & Groups</h2>
+            <p>Manage shared expenses and track balances</p>
+        </div>
+        <button class="apply-btn" onclick="openCreateGroupModal()">
+            <span class="material-icons-round" style="vertical-align: middle; margin-right: 5px;">add_circle</span>
+            Create New Group
+        </button>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; {% if message.tags == 'error' %}background: #fee2e2; color: #ef4444;{% else %}background: #d1fae5; color: #10b981;{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+        {% for group in groups %}
+        <div class="card group-card" style="grid-column: span 2;">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-icons-round">groups</span>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">{{ group.name }}</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ group.members.count }} Members</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    {% if group.is_creator %}
+                    <form method="POST" onsubmit="return confirm('Delete this group? All shared expenses will be removed.');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_group">
+                        <input type="hidden" name="group_id" value="{{ group.id }}">
+                        <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; display: flex; align-items: center;" title="Delete Group">
+                            <span class="material-icons-round">delete</span>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <div class="group-total" style="text-align: right;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Total Spent</span>
+                        <h3 style="margin: 0; color: #5470ff;">{{ user_prefs.currency_symbol|default:"₹" }} {{ group.total_expense|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="group-content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+                <!-- Balances Column -->
+                <div class="balances-section">
+                    <h4 style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Balances</h4>
+                    {% for bal in group.balances %}
+                    <div class="balance-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="https://ui-avatars.com/api/?name={{ bal.username }}&background=random" style="width: 24px; height: 24px; border-radius: 50%;">
+                            <span style="font-weight: 500; font-size: 0.9rem;">{{ bal.username }}{% if bal.is_user %} (You){% endif %}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.85rem; font-weight: 600; {% if bal.balance > 0 %}color: #10b981;{% elif bal.balance < 0 %}color: #ef4444;{% else %}color: #64748b;{% endif %}">
+                                {% if bal.balance > 0 %}Gets back{% elif bal.balance < 0 %}Owes{% else %}Settled{% endif %}
+                                {{ user_prefs.currency_symbol|default:"₹" }} {{ bal.abs_balance|floatformat:2 }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if group.is_creator %}
+                    <div class="add-member-form" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ddd;">
+                        <form method="POST" style="display: flex; gap: 8px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_member">
+                            <input type="hidden" name="group_id" value="{{ group.id }}">
+                            <input type="text" name="username" placeholder="Add member username" required style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem;">
+                            <button type="submit" class="apply-btn" style="padding: 8px 12px; font-size: 0.85rem;">Add</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Expenses Column -->
+                <div class="expenses-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Recent Expenses</h4>
+                        <button class="apply-btn" onclick="openAddExpenseModal('{{ group.id }}', '{{ group.name }}')" style="padding: 5px 10px; font-size: 0.75rem;">+ Add Expense</button>
+                    </div>
+                    
+                    <div class="group-expense-list">
+                        {% for exp in group.expenses %}
+                        <div class="expense-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div>
+                                <p style="margin: 0; font-weight: 500; font-size: 0.9rem;">{{ exp.description }}</p>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Paid by {{ exp.paid_by.username }}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="margin: 0; font-weight: 600; font-size: 0.9rem;">{{ user_prefs.currency_symbol|default:"₹" }} {{ exp.amount }}</p>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ exp.date|date:"d M" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.85rem;">No group expenses yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+            <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <span class="material-icons-round" style="font-size: 32px;">group_add</span>
+            </div>
+            <h3>No Groups Yet</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Create a group to start sharing and tracking expenses with others.</p>
+            <button class="apply-btn" onclick="openCreateGroupModal()">Create a Group</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Create Group Modal -->
+<div id="createGroupModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Create New Group</h3>
+            <span class="close" onclick="closeCreateGroupModal()">&times;</span>
+        </div>
+        <div class="modal-body" style="text-align: left;">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_group">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Group Name</label>
+                    <input type="text" name="group_name" required placeholder="e.g. Goa Trip, Family Home" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit;">
+                </div>
+                <button type="submit" class="apply-btn" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">Create Group</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Group Expense Modal -->
+<div id="addExpenseModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Add Expense to <span id="modalGroupName"></span></h3>
+            <span class="close" onclick="closeAddExpenseModal()">&times;</span>
+        </div>
+        <div class="modal-body" style="text-align: left;">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_group_expense">
+                <input type="hidden" name="group_id" id="modalGroupId">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Description</label>
+                    <input type="text" name="description" required placeholder="Dinner, Taxi, etc." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Amount ({{ user_prefs.currency_symbol|default:"₹" }})</label>
+                    <input type="number" name="amount" step="0.01" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 15px;">* This expense will be split equally among all group members.</p>
+                <button type="submit" class="apply-btn" style="width: 100%; padding: 12px; font-size: 1rem;">Add Expense</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .header-with-action { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
+    .apply-btn { background: #5470ff; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; font-family: inherit;}
+    .apply-btn:hover { background: #435cd1; }
+</style>
+
+<script>
+    function openCreateGroupModal() { document.getElementById('createGroupModal').style.display = 'flex'; }
+    function closeCreateGroupModal() { document.getElementById('createGroupModal').style.display = 'none'; }
+    
+    function openAddExpenseModal(id, name) {
+        document.getElementById('modalGroupId').value = id;
+        document.getElementById('modalGroupName').innerText = name;
+        document.getElementById('addExpenseModal').style.display = 'flex';
+    }
+    function closeAddExpenseModal() { document.getElementById('addExpenseModal').style.display = 'none'; }
+</script>
+{% endblock %}

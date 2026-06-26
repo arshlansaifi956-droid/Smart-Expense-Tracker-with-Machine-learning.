@@ -1,0 +1,213 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="header-with-action">
+        <div>
+            <h2>Settings</h2>
+            <p>Manage your account preferences and data</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; {% if message.tags == 'error' %}background: #fee2e2; color: #ef4444;{% else %}background: #d1fae5; color: #10b981;{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+        <!-- Profile Settings -->
+        <div class="card" style="grid-column: span 1;">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-icons-round">person</span>
+                    </div>
+                    <h3 style="margin: 0;">Profile Settings</h3>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px 0;">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Username</label>
+                        <input type="text" name="username" value="{{ user.username }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Email Address</label>
+                        <input type="email" name="email" value="{{ user.email }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit;">
+                    </div>
+                    <button type="submit" class="apply-btn" style="width: 100%;">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- App Preferences -->
+        <div class="card" style="grid-column: span 1;">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-circle" style="background: #f0f3ff; color: #5470ff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-icons-round">settings_suggest</span>
+                    </div>
+                    <h3 style="margin: 0;">App Preferences</h3>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px 0;">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_preferences">
+                    
+                    <div class="setting-item" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <p style="margin: 0; font-weight: 500;">Currency</p>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Current: {{ preferences.currency }} ({{ preferences.currency_symbol }})</span>
+                            </div>
+                        </div>
+                        <select name="currency" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background: white;">
+                            <option value="INR" {% if preferences.currency == 'INR' %}selected{% endif %}>INR (₹) - Indian Rupee</option>
+                            <option value="USD" {% if preferences.currency == 'USD' %}selected{% endif %}>USD ($) - US Dollar</option>
+                            <option value="EUR" {% if preferences.currency == 'EUR' %}selected{% endif %}>EUR (€) - Euro</option>
+                            <option value="GBP" {% if preferences.currency == 'GBP' %}selected{% endif %}>GBP (£) - British Pound</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <p style="margin: 0; font-weight: 500;">Notifications</p>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Email and Browser alerts</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="notifications" {% if preferences.notifications_enabled %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <p style="margin: 0; font-weight: 500;">Dark Mode</p>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Adjust visual theme</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="dark_mode" {% if preferences.dark_mode %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px;">
+                        <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <p style="margin: 0; font-weight: 500;">Voice Assistant</p>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Enable voice-to-expense parsing</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="voice_enabled" {% if preferences.voice_assistant_enabled %}checked{% endif %}>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <p style="margin: 0; font-weight: 500;">Enabled Languages</p>
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">Choose languages you use</span>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 8px;">
+                                {% for lang in available_languages %}
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                                    <input type="checkbox" name="enabled_langs" value="{{ lang.code }}" {% if lang.code in enabled_langs_list %}checked{% endif %} class="lang-checkbox" onchange="updateDefaultOptions()">
+                                    {{ lang.name }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <p style="margin: 0; font-weight: 500;">Default Assistant Language</p>
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">Used automatically when opening assistant</span>
+                                </div>
+                            </div>
+                            <select name="voice_language" id="default_lang_select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background: white;">
+                                {% for lang in available_languages %}
+                                <option value="{{ lang.code }}" {% if preferences.voice_assistant_language == lang.code %}selected{% endif %} {% if lang.code not in enabled_langs_list %}style="display:none;"{% endif %}>{{ lang.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <script>
+                        function updateDefaultOptions() {
+                            const checkboxes = document.querySelectorAll('.lang-checkbox');
+                            const select = document.getElementById('default_lang_select');
+                            const options = select.options;
+                            
+                            checkboxes.forEach(cb => {
+                                for (let i = 0; i < options.length; i++) {
+                                    if (options[i].value === cb.value) {
+                                        options[i].style.display = cb.checked ? 'block' : 'none';
+                                        if (!cb.checked && select.value === cb.value) {
+                                            const firstChecked = Array.from(checkboxes).find(c => c.checked);
+                                            if (firstChecked) select.value = firstChecked.value;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    </script>
+
+                    <button type="submit" class="apply-btn" style="width: 100%;">Apply Preferences</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card" style="grid-column: span 1; border: 1px solid #fee2e2;">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-circle" style="background: #fee2e2; color: #ef4444; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-icons-round">dangerous</span>
+                    </div>
+                    <h3 style="margin: 0; color: #ef4444;">Danger Zone</h3>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px 0;">
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Once you reset your data, there is no going back. Please be certain.</p>
+                <form method="POST" onsubmit="return confirm('ARE YOU SURE? This will permanently delete all your expenses and receipts!');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_data">
+                    <button type="submit" class="danger-btn" style="width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;">Reset All Expense Data</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .header-with-action { margin-bottom: 30px; }
+    .apply-btn { background: #5470ff; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; font-family: inherit;}
+    .apply-btn:hover { background: #435cd1; }
+    .danger-btn:hover { background: #dc2626 !important; }
+    .setting-item { padding: 10px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+    .setting-item:hover { background: #f8f9fa; }
+
+    /* Switch Component */
+    .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; }
+    input:checked + .slider { background-color: #5470ff; }
+    input:focus + .slider { box-shadow: 0 0 1px #5470ff; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    .slider.round { border-radius: 34px; }
+    .slider.round:before { border-radius: 50%; }
+</style>
+{% endblock %}
